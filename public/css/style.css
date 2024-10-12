@@ -1,0 +1,35 @@
+body {
+    padding: 20px;
+  }
+  #dashboard {
+    margin-top: 20px;
+  }
+  .status-indicator {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+  }
+  #printProgressContainer {
+    position: relative;
+    height: 25px;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    margin-top: 10px;
+  }
+  #printProgressBar {
+    position: absolute;
+    height: 100%;
+    width: 0%;
+    background-color: #28a745;
+    border-radius: 5px;
+    transition: width 0.5s;
+  }
+  /* Custom Styles for Custom Script Section */
+  #customScriptSection {
+    margin-top: 20px;
+  }
+  #customScriptSection textarea {
+    resize: vertical;
+  }

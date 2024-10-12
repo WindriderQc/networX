@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Home - 3D Printer Controller</title>
+  <!-- Bootstrap CSS -->
+  <link 
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+    rel="stylesheet" 
+    integrity="sha384-ENjdO4Dr2bkBIFxQpeo4G3dq6XmE31GQ5mN1Ph9aFgYx03dVd+0KRk4y+Og5+T" 
+    crossorigin="anonymous">
+  <!-- p5.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+  
+</head>
+<body>
+  <!-- Include Navbar -->
+  <% include partials/navbar.ejs %>
+
+  <div class="container">
+    <h1 class="mb-4">3D Printer Controller</h1>
+
+    <!-- Navbar Start -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">3D Printer Controller</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                  aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto"> <!-- ms-auto to align to the right -->
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="#">Home</a> <!-- Active link -->
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="gCoder.html">gCoder</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <!-- Navbar End -->
+      
+        <div class="container">
+            <h1>Network Scan Results</h1>
+            <div id="summary"></div>
+            <div id="results"></div>
+        </div>
+    
+        <script>
+            function setup() {
+                noCanvas();
+                fetch('/scan')
+                    .then(response => response.text())
+                    .then(csvText => {
+                        let parsedData = Papa.parse(csvText, { header: true });
+                        console.log(parsedData);  // Debugging: Log the parsed data
+                        displaySummary(parsedData.data);
+                        displayData(parsedData.data);
+                    })
+                    .catch(error => console.error('Error fetching CSV:', error));
+            }
+    
+            function displaySummary(table) {
+                let connectedDevices = 0;
+                let openPorts = new Set();
+    
+                table.forEach(row => {
+                    if (row['IP'] && row['Ping'] !== '[n/a]') {
+                        connectedDevices++;
+                        if (row['Ports'] && row['Ports'] !== '[n/s]') {
+                            row['Ports'].split('.').forEach(port => {
+                                if (port.trim() !== '[n/a]') {
+                                    openPorts.add(port.trim());
+                                }
+                            });
+                        }
+                    }
+                });
+    
+                let summaryContent = `
+                    <p><strong>Number of Devices Connected:</strong> ${connectedDevices}</p>
+                    <p><strong>List of Opened Ports:</strong> ${Array.from(openPorts).join(', ')}</p>
+                `;
+    
+                document.getElementById('summary').innerHTML = summaryContent;
+            }
+    
+            function displayData(table) {
+                let htmlContent = `
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>IP Address</th>
+                            <th>Ping</th>
+                            <th>Hostname</th>
+                            <th>Ports</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                `;
+    
+                table.forEach(row => {
+                    console.log(row);  // Debugging: Log each row
+                    if (row['IP'] && row['Ping'] !== '[n/a]') {  // Check for valid IP and Ping
+                        htmlContent += `
+                        <tr>
+                            <td>${row['IP']}</td>
+                            <td>${row['Ping']}</td>
+                            <td>${row['Hostname']}</td>
+                            <td>${row['Ports']}</td>
+                        </tr>
+                        `;
+                    }
+                });
+    
+                htmlContent += `
+                    </tbody>
+                </table>
+                `;
+    
+                document.getElementById('results').innerHTML = htmlContent;
+            }
+        </script>
+  <!-- Bootstrap JS Bundle -->
+  <script 
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" 
+    integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" 
+    crossorigin="anonymous">
+  </script>
+  
+  <!-- p5.js Script (if needed for custom visuals) -->
+  <script>
+    // Initialize p5.js if needed
+    // For this example, we won't be using p5.js, but it's included for future extensions.
+    function setup() {
+      // No canvas needed
+      noCanvas();
+    }
+  </script>
+
+  <!-- Main JavaScript -->
+  <script>
+    // (Your existing client-side JavaScript code goes here)
+    // Ensure all your event listeners and functions are included.
+    // For brevity, this section is omitted.
+  </script>
+</body>
+</html>
