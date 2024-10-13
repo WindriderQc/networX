@@ -1,5 +1,7 @@
 body {
-    padding: 20px;
+    padding-top: 60px; /* Space for fixed navbar */
+    padding-left: 20px;
+    padding-right: 20px;
   }
   #dashboard {
     margin-top: 20px;

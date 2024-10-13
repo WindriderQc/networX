@@ -4,25 +4,15 @@
   <meta charset="UTF-8">
   <title>gCoder - 3D Printer Controller</title>
   <!-- Bootstrap CSS -->
-  <link 
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
-    rel="stylesheet" 
-    integrity="sha384-ENjdO4Dr2bkBIFxQpeo4G3dq6XmE31GQ5mN1Ph9aFgYx03dVd+0KRk4y+Og5+T" 
-    crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- p5.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
-  <style>
-    body {
-      padding-top: 70px; /* Space for fixed navbar */
-      padding-left: 20px;
-      padding-right: 20px;
-    }
-    /* Additional custom styles */
-  </style>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
   <!-- Include Navbar -->
-  <% include partials/navbar.ejs %>
+  <%- include('partials/navbar') %>
   
   <!-- p5.js Script (if needed for custom visuals) -->
   <script>
@@ -32,14 +22,57 @@
       // No canvas needed
       noCanvas();
     }
+    function loop() {}
   </script>
-<div class="container">
+
+  <div class="container">
     <h1 class="mb-4">3D Printer Controller</h1>
 
     <!-- Serial Connection Section -->
     <div class="mb-4">
       <button id="connectButton" class="btn btn-primary">Connect to Printer</button>
       <span id="connectionStatus" class="ms-3">Disconnected</span>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div class="card mb-4" id="dashboard">
+      <div class="card-header">
+        Printer Dashboard
+      </div>
+      <div class="card-body">
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <strong>Status:</strong> <span id="printerStatus">Idle</span>
+            <span id="statusIndicator" class="status-indicator bg-success"></span>
+          </div>
+          <div class="col-md-4">
+            <strong>Printer Name:</strong> <span id="printerName">Unknown</span>
+          </div>
+          <div class="col-md-4">
+            <strong>IP Address:</strong> <span id="printerIP">N/A</span>
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <strong>Hotend Temperature:</strong> <span id="hotendTemp">0°C</span>
+          </div>
+          <div class="col-md-4">
+            <strong>Bed Temperature:</strong> <span id="bedTemp">0°C</span>
+          </div>
+          <div class="col-md-4">
+            <strong>Print Progress:</strong>
+            <div id="printProgressContainer">
+              <div id="printProgressBar"></div>
+            </div>
+            <span id="printProgressText">0%</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12">
+            <strong>Current GCODE:</strong> <span id="currentGcode">None</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- GCODE Input Section -->
@@ -52,6 +85,8 @@
           <input type="text" id="gcodeInput" class="form-control" placeholder="Enter GCODE command">
           <button id="sendGcodeButton" class="btn btn-success">Send</button>
         </div>
+        <!-- Display response from serial device -->
+        <div id="gcodeResponse" class="mt-3 alert alert-info" style="display: none;"></div>
       </div>
     </div>
 
@@ -99,439 +134,122 @@
       </div>
     </div>
 
-    <!-- Dashboard Section -->
-    <div class="card" id="dashboard">
+    <!-- CRON Scheduled Tasks Section -->
+    <div class="card" id="cronTasksSection">
       <div class="card-header">
-        Printer Dashboard
+        CRON Scheduled Tasks
       </div>
       <div class="card-body">
-        <div class="row mb-3">
-          <div class="col-md-4">
-            <strong>Status:</strong> <span id="printerStatus">Idle</span>
-            <span id="statusIndicator" class="status-indicator bg-success"></span>
-          </div>
-          <div class="col-md-4">
-            <strong>Printer Name:</strong> <span id="printerName">Unknown</span>
-          </div>
-          <div class="col-md-4">
-            <strong>IP Address:</strong> <span id="printerIP">N/A</span>
-          </div>
-        </div>
-        <div class="row mb-3">
-          <div class="col-md-4">
-            <strong>Hotend Temperature:</strong> <span id="hotendTemp">0°C</span>
-          </div>
-          <div class="col-md-4">
-            <strong>Bed Temperature:</strong> <span id="bedTemp">0°C</span>
-          </div>
-          <div class="col-md-4">
-            <strong>Print Progress:</strong>
-            <div id="printProgressContainer">
-              <div id="printProgressBar"></div>
-            </div>
-            <span id="printProgressText">0%</span>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-12">
-            <strong>Current GCODE:</strong> <span id="currentGcode">None</span>
-          </div>
+        <div id="cronTasksList">
+          <p>No scheduled tasks found.</p>
         </div>
       </div>
     </div>
+
   </div>
 
   <!-- Bootstrap JS Bundle -->
-  <script  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" > </script>
-  
- 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Main JavaScript -->
+  <!-- Main JavaScript
+  <script src="js/gcoder.js"></script> -->
+
   <script>
-    console.log("Welcome to gCoder v0.1a")
-    // Check for Web Serial API support
-    if ("serial" in navigator) {
-      console.log("Web Serial API supported.");
-    } else {
-      alert("Web Serial API not supported by this browser. Please use Google Chrome.");
-    }
-
-    let port;
-    let reader;
-    let inputDone;
-    let outputDone;
-    let inputStream;
-    let outputStream;
-
-    const connectButton = document.getElementById('connectButton');
-    const connectionStatus = document.getElementById('connectionStatus');
-
-    // Dashboard Elements
-    const printerStatus = document.getElementById('printerStatus');
-    const statusIndicator = document.getElementById('statusIndicator');
-    const printerName = document.getElementById('printerName');
-    const printerIP = document.getElementById('printerIP');
-    const hotendTemp = document.getElementById('hotendTemp');
-    const bedTemp = document.getElementById('bedTemp');
-    const printProgressBar = document.getElementById('printProgressBar');
-    const printProgressText = document.getElementById('printProgressText');
-    const currentGcode = document.getElementById('currentGcode');
-
-    // GCODE Input Elements
-    const sendGcodeButton = document.getElementById('sendGcodeButton');
-    const gcodeInput = document.getElementById('gcodeInput');
-
-    // Premade Sequences
-    const premadeButtons = document.querySelectorAll('.premade-sequence');
-    const premadeSequencesGroup = document.getElementById('premadeSequencesGroup');
-    const premadeSequences = {
-      "Home All Axes": "G28",
-      "Preheat PLA": "M104 S200\nM140 S60",
-      "Start Print": "M109 S200\nM190 S60\nG92 E0\nG1 F140 E30",
-      // Add more sequences as needed
-    };
-
-    // Custom Script Elements
-    const saveScriptButton = document.getElementById('saveScriptButton');
-    const scriptNameInput = document.getElementById('scriptName');
-    const scriptGcodesInput = document.getElementById('scriptGcodes');
-    const exportScriptsButton = document.getElementById('exportScriptsButton');
-    const importScriptsButton = document.getElementById('importScriptsButton');
-    const importFileInput = document.getElementById('importFileInput');
-
-    // Initialize Custom Scripts from localStorage
-    let customScripts = {};
-
-    function loadCustomScripts() {
-      const savedScripts = localStorage.getItem('customScripts');
-      if (savedScripts) {
-        try {
-          customScripts = JSON.parse(savedScripts);
-        } catch (e) {
-          console.error("Error parsing saved scripts:", e);
-          customScripts = {};
-        }
-      } else {
-        customScripts = {};
-      }
-    }
-
-    function saveCustomScripts() {
-      localStorage.setItem('customScripts', JSON.stringify(customScripts));
-    }
-
-    function createPremadeButton(name) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'btn btn-secondary premade-sequence';
-      button.setAttribute('data-sequence', name);
-      button.textContent = name;
-      premadeSequencesGroup.appendChild(button);
-
-      // Add event listener
-      button.addEventListener('click', () => {
-        const sequenceName = button.getAttribute('data-sequence');
-        const commands = premadeSequences[sequenceName];
-        if (commands) {
-          const cmds = commands.split('\n');
-          cmds.forEach(cmd => sendGcode(cmd));
-          currentGcode.textContent = sequenceName;
-        }
-      });
-    }
-
-    // Load custom scripts and create buttons on page load
-    function initializeCustomScripts() {
-      loadCustomScripts();
-      for (const [name, cmds] of Object.entries(customScripts)) {
-        premadeSequences[name] = cmds.join('\n'); // Merge into premadeSequences
-        createPremadeButton(name);
-      }
-    }
-
-    // Initial load
-    initializeCustomScripts();
-
-    connectButton.addEventListener('click', async () => {
-      try {
-        // Prompt user to select any serial port.
-        port = await navigator.serial.requestPort();
-        // Wait for the port to open.
-        await port.open({ baudRate: 115200 });
-        connectionStatus.textContent = "Connected";
-        connectionStatus.style.color = "green";
-
-        // Setup reader and writer
-        const textDecoder = new TextDecoderStream();
-        const textEncoder = new TextEncoderStream();
-        inputDone = port.readable.pipeTo(textDecoder.writable);
-        outputDone = textEncoder.readable.pipeTo(port.writable);
-        inputStream = textDecoder.readable;
-        outputStream = textEncoder.writable;
-
-        reader = inputStream.getReader();
-
-        // Start reading data
-        readLoop();
-
-        // Initialize Printer Info after connection
-        initializePrinterInfo();
-      } catch (error) {
-        console.error("There was an error opening the serial port:", error);
-        connectionStatus.textContent = "Disconnected";
-        connectionStatus.style.color = "red";
-      }
-    });
-
-    async function readLoop() {
-      while (true) {
-        try {
-          const { value, done } = await reader.read();
-          if (done) {
-            // Allow the serial port to be closed later.
-            reader.releaseLock();
-            break;
-          }
-          if (value) {
-            handleSerialData(value);
-          }
-        } catch (error) {
-          console.error("Read error:", error);
-          break;
-        }
-      }
-    }
-
-    function handleSerialData(data) {
-      // Assuming data is in lines
-      const lines = data.split('\n');
-      lines.forEach(line => {
-        parseGcodeResponse(line.trim());
-      });
-    }
-
-    function parseGcodeResponse(line) {
-      // Example parsing logic, adjust based on printer firmware responses
-      console.log("Received:", line);
-      
-      if (line.toLowerCase().includes("ok")) {
-        printerStatus.textContent = "Idle";
-        statusIndicator.style.backgroundColor = "green";
-      } else if (line.toLowerCase().includes("start")) {
-        printerStatus.textContent = "Printing";
-        statusIndicator.style.backgroundColor = "orange";
-      } else if (line.startsWith("T:")) {
-        // Example: T:200 /200 B:60 /60
-        const regex = /T:(\d+)\s*\/\d+\s*B:(\d+)\s*\/\d+/;
-        const matches = line.match(regex);
-        if (matches) {
-          hotendTemp.textContent = `${matches[1]}°C`;
-          bedTemp.textContent = `${matches[2]}°C`;
-        }
-      } else if (line.startsWith("Print Progress:")) {
-        // Example: Print Progress: 45%
-        const regex = /Print Progress:\s*(\d+)%/;
-        const matches = line.match(regex);
-        if (matches) {
-          const progress = parseInt(matches[1]);
-          printProgressBar.style.width = `${progress}%`;
-          printProgressText.textContent = `${progress}%`;
-        }
-      } else if (line.startsWith("Printer Name:")) {
-        const name = line.replace("Printer Name:", "").trim();
-        printerName.textContent = name;
-      } else if (line.startsWith("IP Address:")) {
-        const ip = line.replace("IP Address:", "").trim();
-        printerIP.textContent = ip;
-      }
-      // Add more parsing as needed based on your printer's responses
-    }
-
-    // Send GCODE Function
-    async function sendGcode(command) {
-      if (outputStream) {
-        const writer = outputStream.getWriter();
-        await writer.write(new TextEncoder().encode(`${command}\n`));
-        writer.releaseLock();
-        currentGcode.textContent = command;
-      } else {
-        alert("Serial port not connected.");
-      }
-    }
-
-    // Event Listener for Send Button
-    sendGcodeButton.addEventListener('click', () => {
-      const command = gcodeInput.value.trim();
-      if (command) {
-        sendGcode(command);
-        gcodeInput.value = '';
-      }
-    });
-
-    // Event Listener for Enter Key in GCODE Input
-    gcodeInput.addEventListener('keyup', (event) => {
-      if (event.key === 'Enter') {
-        sendGcodeButton.click();
-      }
-    });
-
-    // Event Listener for Premade Sequences Buttons (Existing Buttons)
-    function attachPremadeButtonListeners() {
-      const existingButtons = document.querySelectorAll('.premade-sequence');
-      existingButtons.forEach(button => {
-        const sequenceName = button.getAttribute('data-sequence');
-        button.removeEventListener('click', handlePremadeButtonClick); // Prevent duplicate listeners
-        button.addEventListener('click', handlePremadeButtonClick);
-      });
-    }
-
-    function handlePremadeButtonClick(event) {
-      const button = event.currentTarget;
-      const sequenceName = button.getAttribute('data-sequence');
-      const commands = premadeSequences[sequenceName];
-      if (commands) {
-        const cmds = commands.split('\n');
-        cmds.forEach(cmd => sendGcode(cmd));
-        currentGcode.textContent = sequenceName;
-      }
-    }
-
-    // Attach listeners to initial premade buttons
-    attachPremadeButtonListeners();
-
-    // Event Listeners for Custom Scripts
-    saveScriptButton.addEventListener('click', () => {
-      const scriptName = scriptNameInput.value.trim();
-      const scriptGcodes = scriptGcodesInput.value.trim();
-
-      if (!scriptName) {
-        alert("Please enter a script name.");
-        return;
-      }
-
-      if (!scriptGcodes) {
-        alert("Please enter GCODE commands.");
-        return;
-      }
-
-      if (premadeSequences.hasOwnProperty(scriptName)) {
-        if (!confirm("A script with this name already exists. Overwrite?")) {
-          return;
-        }
-      }
-
-      // Split GCODE commands by new lines and filter out empty lines
-      const commands = scriptGcodes.split('\n').map(cmd => cmd.trim()).filter(cmd => cmd);
-
-      // Save to premadeSequences
-      premadeSequences[scriptName] = commands.join('\n');
-
-      // Save to customScripts and persist
-      customScripts[scriptName] = commands;
-      saveCustomScripts();
-
-      // Create and append new button
-      createPremadeButton(scriptName);
-
-      // Clear input fields
-      scriptNameInput.value = '';
-      scriptGcodesInput.value = '';
-
-      alert(`Script "${scriptName}" saved and added to Premade Sequences.`);
-    });
-
-    // Allow pressing Enter in script name to focus on GCODE textarea
-    scriptNameInput.addEventListener('keyup', (event) => {
-      if (event.key === 'Enter') {
-        scriptGcodesInput.focus();
-      }
-    });
-
-    // Event Listener for Export Scripts Button
-    exportScriptsButton.addEventListener('click', () => {
-      const dataStr = JSON.stringify(customScripts, null, 2);
-      const blob = new Blob([dataStr], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = "custom_scripts.json";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      alert("Custom scripts have been exported successfully.");
-    });
-
-    // Event Listener for Import Scripts Button
-    importScriptsButton.addEventListener('click', () => {
-      importFileInput.click();
-    });
-
-    // Handle File Selection for Import
-    importFileInput.addEventListener('change', (event) => {
-      const file = event.target.files[0];
-      if (!file) {
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const importedScripts = JSON.parse(e.target.result);
-          if (typeof importedScripts !== 'object' || importedScripts === null) {
-            throw new Error("Invalid script format.");
-          }
-
-          let addedScripts = 0;
-          for (const [name, cmds] of Object.entries(importedScripts)) {
-            if (typeof name !== 'string' || !Array.isArray(cmds)) {
-              console.warn(`Invalid script entry skipped: ${name}`);
-              continue;
-            }
-
-            if (premadeSequences.hasOwnProperty(name)) {
-              if (!confirm(`A script named "${name}" already exists. Overwrite?`)) {
-                continue;
-              }
-            }
-
-            // Ensure all commands are strings
-            const validCmds = cmds.filter(cmd => typeof cmd === 'string').map(cmd => cmd.trim()).filter(cmd => cmd);
-            if (validCmds.length === 0) {
-              console.warn(`No valid commands for script "${name}". Skipping.`);
-              continue;
-            }
-
-            premadeSequences[name] = validCmds.join('\n');
-            customScripts[name] = validCmds;
-            createPremadeButton(name);
-            addedScripts++;
-          }
-
-          saveCustomScripts();
-          alert(`${addedScripts} script(s) imported successfully.`);
-        } catch (error) {
-          console.error("Error importing scripts:", error);
-          alert("Failed to import scripts. Please ensure the file is a valid JSON.");
-        }
-      };
-
-      reader.readAsText(file);
-      // Reset the input value to allow re-importing the same file if needed
-      importFileInput.value = '';
-    });
-
-    // Optionally, you can implement a function to periodically send status requests
-    // For example, send "M105" to get temperatures, "M27" for SD status, etc.
-
-    // Example: Periodically request temperature
-    setInterval(() => {
-      if (port && port.readable) {
-        sendGcode("M105");
-      }
-    }, 5000); // every 5 seconds
-
   
+
+// Global variables to store port and reader
+let port;
+let reader;
+
+// Connect to the printer on button click
+document.getElementById('connectButton').addEventListener('click', connectToPrinter);
+
+  // Send GCODE button click
+document.getElementById('sendGcodeButton').addEventListener('click', async () => {
+    const gcodeInput = document.getElementById('gcodeInput').value;
+    await sendGcode(gcodeInput);
+});
+
+
+
+// Function to connect to the printer
+async function connectToPrinter() {
+    try {
+        port = await navigator.serial.requestPort(); // Request a port
+        await port.open({ baudRate: 57600  }); // Open the port
+        reader = port.readable.getReader(); // Get a reader to read responses
+        console.log('Serial connection to:', port);
+        // Update connection status
+        document.getElementById('connectionStatus').innerText = 'Connected ';
+
+        initializePrinterInfo();
+
+    } catch (error) {
+        console.error('Error connecting to printer:', error);
+    }
+}
+
+
+
+// Function to send GCODE to the printer
+async function sendGcode(gcode) {
+    try {
+        const encoder = new TextEncoder();
+        const writer = port.writable.getWriter();
+        const command = encoder.encode(gcode + '\n'); // Add newline for GCODE
+        await writer.write(command);
+        writer.releaseLock();
+        
+        // After sending GCODE, fetch the printer status
+        await fetchPrinterStatus();
+    } catch (error) {
+        console.error('Error sending GCODE:', error);
+    }
+}
+
+// Function to fetch printer status
+async function fetchPrinterStatus() {
+    try {
+        // Send a command to get the status (this is device-specific)
+        const encoder = new TextEncoder();
+        const writer = port.writable.getWriter();
+        const command = encoder.encode('M105\n'); // Example command to get temperature status
+
+        await writer.write(command);
+        writer.releaseLock();
+
+        // Read the response
+        const response = await reader.read();
+        const decoder = new TextDecoder();
+        const statusData = decoder.decode(response.value);
+        console.log('Printer Status:', statusData);
+        
+        // Update UI with printer status
+        document.getElementById('gcodeResponse').innerText = statusData; // Display response
+        document.getElementById('gcodeResponse').style.display = 'block';
+
+        // Parse statusData to update other UI elements like temperatures, status, etc.
+        // Assuming statusData is formatted correctly, you would parse it here.
+        // Example: if statusData is 'T:200.00 /0.00 B:60.00 /0.00', you could extract these values.
+        const [hotendTemp, bedTemp] = statusData.match(/T:([\d\.]+)/)?.slice(1) || [0, 0];
+        document.getElementById('hotendTemp').innerText = `${hotendTemp}°C`;
+        document.getElementById('bedTemp').innerText = `${bedTemp}°C`;
+
+    } catch (error) {
+        console.error('Error fetching printer status:', error);
+    }
+}
+
+
+// Fetch Printer Status periodically (optional)
+async function initializePrinterInfo() {
+    fetchPrinterStatus(); // Initial call
+   // setInterval(fetchPrinterStatus, 5000); // Repeat every 5 seconds
+}
+
+
+
+  </script>
 
   <!-- Additional JavaScript if needed -->
 </body>
