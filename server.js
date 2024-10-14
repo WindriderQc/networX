@@ -16,6 +16,25 @@ app.set('views', path.join(__dirname, 'views'));
 // Serve static files from the 'public' directory
 app.use(express.static('public'));
 
+// Array to hold cron tasks to be scheduled
+const cronTasks = [
+    { id: 1, schedule: '0 * * * *', command: SCAN_COMMAND, description: 'Scheduled IP scan every hour' },
+    // You can add more cron tasks here
+];
+
+// Schedule tasks based on the cronTasks array
+cronTasks.forEach(task => {
+    cron.schedule(task.schedule, () => {
+        exec(task.command, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Scheduled scan error for task ${task.id}: ${error.message}`);
+            } else {
+                console.log(`Scheduled task ${task.id} completed successfully`);
+            }
+        });
+    });
+});
+
 // Route for Home Page
 app.get('/', (req, res) => {
     res.render('index', { currentPage: 'home' });
@@ -24,6 +43,11 @@ app.get('/', (req, res) => {
 // Route for gCoder Page
 app.get('/gcoder', (req, res) => {
     res.render('gcoder', { currentPage: 'gcoder' });
+});
+
+// Route to get cron tasks
+app.get('/cron', (req, res) => {
+    res.json(cronTasks);
 });
 
 // Route to perform IP scan and serve results
@@ -46,16 +70,8 @@ app.get('/scan', (req, res) => {
     });
 });
 
-// Optional: Schedule a scan every hour
-cron.schedule('0 * * * *', () => {
-    exec(SCAN_COMMAND, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Scheduled scan error: ${error.message}`);
-        } else {
-            console.log('Scheduled IP scan completed successfully');
-        }
-    });
-});
+
+
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

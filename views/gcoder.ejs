@@ -42,8 +42,8 @@
       <div class="card-body">
         <div class="row mb-3">
           <div class="col-md-4">
-            <strong>Status:</strong> <span id="printerStatus">Idle</span>
-            <span id="statusIndicator" class="status-indicator bg-success"></span>
+            <strong>Status:</strong> <span id="printerStatus">Disconnected</span>
+            <span id="statusIndicator" class="status-indicator bg-danger"></span>
           </div>
           <div class="col-md-4">
             <strong>Printer Name:</strong> <span id="printerName">Unknown</span>
@@ -100,21 +100,28 @@
           <input type="file" id="importFileInput" accept=".json" style="display: none;">
         </div>
       </div>
-      <div class="card-body">
+      <div class="card-body ">
         <div class="btn-group" role="group" aria-label="Premade Sequences" id="premadeSequencesGroup">
-          <button type="button" class="btn btn-secondary premade-sequence" data-sequence="Home All Axes">
-            Home All Axes
-          </button>
-          <button type="button" class="btn btn-secondary premade-sequence" data-sequence="Preheat PLA">
-            Preheat PLA
-          </button>
-          <button type="button" class="btn btn-secondary premade-sequence" data-sequence="Start Print">
-            Start Print
-          </button>
-          <!-- Custom Scripts will be appended here -->
+             <!-- Buttons will be dynamically added here -->
+          <!--<button type="button" class="btn btn-secondary premade-sequence" data-sequence="Home All Axes"> Home All Axes </button>
+          <button type="button" class="btn btn-secondary premade-sequence" data-sequence="Get IP">  Get IP   </button>
+          <button type="button" class="btn btn-secondary premade-sequence" data-sequence="Start Print"> Start Print </button>
+           Custom Scripts will be appended here -->
+        </div> 
+        <div class="py-0 px-1 my-0 border border-secondary">
+           
+                M587 S"YourSSID" P"YourPassword" ; Add a new Wi-Fi network with SSID and password
+                <br>
+                M552 S1     ; connect to wifi
+                
+               
         </div>
+   
+     
       </div>
+  
     </div>
+   
 
     <!-- Custom Script Section -->
     <div class="card mb-4" id="customScriptSection">
@@ -151,101 +158,11 @@
   <!-- Bootstrap JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Main JavaScript
-  <script src="js/gcoder.js"></script> -->
+  <!-- Main JavaScript-->
+  <script src="js/gcoder.js"></script> 
 
   <script>
   
-
-// Global variables to store port and reader
-let port;
-let reader;
-
-// Connect to the printer on button click
-document.getElementById('connectButton').addEventListener('click', connectToPrinter);
-
-  // Send GCODE button click
-document.getElementById('sendGcodeButton').addEventListener('click', async () => {
-    const gcodeInput = document.getElementById('gcodeInput').value;
-    await sendGcode(gcodeInput);
-});
-
-
-
-// Function to connect to the printer
-async function connectToPrinter() {
-    try {
-        port = await navigator.serial.requestPort(); // Request a port
-        await port.open({ baudRate: 57600  }); // Open the port
-        reader = port.readable.getReader(); // Get a reader to read responses
-        console.log('Serial connection to:', port);
-        // Update connection status
-        document.getElementById('connectionStatus').innerText = 'Connected ';
-
-        initializePrinterInfo();
-
-    } catch (error) {
-        console.error('Error connecting to printer:', error);
-    }
-}
-
-
-
-// Function to send GCODE to the printer
-async function sendGcode(gcode) {
-    try {
-        const encoder = new TextEncoder();
-        const writer = port.writable.getWriter();
-        const command = encoder.encode(gcode + '\n'); // Add newline for GCODE
-        await writer.write(command);
-        writer.releaseLock();
-        
-        // After sending GCODE, fetch the printer status
-        await fetchPrinterStatus();
-    } catch (error) {
-        console.error('Error sending GCODE:', error);
-    }
-}
-
-// Function to fetch printer status
-async function fetchPrinterStatus() {
-    try {
-        // Send a command to get the status (this is device-specific)
-        const encoder = new TextEncoder();
-        const writer = port.writable.getWriter();
-        const command = encoder.encode('M105\n'); // Example command to get temperature status
-
-        await writer.write(command);
-        writer.releaseLock();
-
-        // Read the response
-        const response = await reader.read();
-        const decoder = new TextDecoder();
-        const statusData = decoder.decode(response.value);
-        console.log('Printer Status:', statusData);
-        
-        // Update UI with printer status
-        document.getElementById('gcodeResponse').innerText = statusData; // Display response
-        document.getElementById('gcodeResponse').style.display = 'block';
-
-        // Parse statusData to update other UI elements like temperatures, status, etc.
-        // Assuming statusData is formatted correctly, you would parse it here.
-        // Example: if statusData is 'T:200.00 /0.00 B:60.00 /0.00', you could extract these values.
-        const [hotendTemp, bedTemp] = statusData.match(/T:([\d\.]+)/)?.slice(1) || [0, 0];
-        document.getElementById('hotendTemp').innerText = `${hotendTemp}°C`;
-        document.getElementById('bedTemp').innerText = `${bedTemp}°C`;
-
-    } catch (error) {
-        console.error('Error fetching printer status:', error);
-    }
-}
-
-
-// Fetch Printer Status periodically (optional)
-async function initializePrinterInfo() {
-    fetchPrinterStatus(); // Initial call
-   // setInterval(fetchPrinterStatus, 5000); // Repeat every 5 seconds
-}
 
 
 
