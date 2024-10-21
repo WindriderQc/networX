@@ -7,12 +7,17 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto"> <!-- ms-auto to align to the right -->
+
           <li class="nav-item">
             <a class="nav-link <%= (currentPage === 'home') ? 'active' : '' %>" aria-current="page" href="/">Home</a>
           </li>
           <li class="nav-item">
             <a class="nav-link <%= (currentPage === 'gcoder') ? 'active' : '' %>" href="/gcoder">gCoder</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link <%= (currentPage === 'eye') ? 'active' : '' %>" href="/eye/">Eye</a>
+          </li>
+
         </ul>
       </div>
     </div>

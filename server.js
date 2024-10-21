@@ -1,11 +1,15 @@
+const https = require('https');
+const fs = require('fs');
 const express = require('express');
 const { exec } = require('child_process');
-const fs = require('fs');
 const path = require('path');
-const cron = require('node-cron'); // Optional: For scheduling scans
+const cron = require('node-cron');
+const cors = require('cors');
+
 
 const app = express();
 const PORT = 3000;
+const HTTPS_PORT = 3443;
 const RESULTS_FILE = 'results.csv';
 const SCAN_COMMAND = 'ipscan -f:range 192.168.1.1 192.168.1.254 -o results.csv -s -q';
 
@@ -16,27 +20,24 @@ app.set('views', path.join(__dirname, 'views'));
 // Serve static files from the 'public' directory
 app.use(express.static('public'));
 
-// Array to hold cron tasks to be scheduled
-const cronTasks = [
-    { id: 1, schedule: '0 * * * *', command: SCAN_COMMAND, description: 'Scheduled IP scan every hour' },
-    // You can add more cron tasks here
-];
+app.use(cors());
 
-// Schedule tasks based on the cronTasks array
-cronTasks.forEach(task => {
-    cron.schedule(task.schedule, () => {
-        exec(task.command, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`Scheduled scan error for task ${task.id}: ${error.message}`);
-            } else {
-                console.log(`Scheduled task ${task.id} completed successfully`);
-            }
-        });
-    });
+// SSL certificate and key files
+const sslOptions = {
+    key: fs.readFileSync(path.join(__dirname, 'server.key')),
+    cert: fs.readFileSync(path.join(__dirname, 'server.cert'))
+};
+
+// HTTPS server
+https.createServer(sslOptions, app).listen(HTTPS_PORT, () => {
+    console.log(`HTTPS server running on https://localhost:${HTTPS_PORT}`);
 });
+
+// Your existing routes and other Express.js logic...
 
 // Route for Home Page
 app.get('/', (req, res) => {
+    console.log("GET request received at /");
     res.render('index', { currentPage: 'home' });
 });
 
@@ -70,9 +71,8 @@ app.get('/scan', (req, res) => {
     });
 });
 
-
-
-
+// Regular HTTP server to redirect to HTTPS (optional)
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`HTTP server running on http://localhost:${PORT}`);
+    console.log(`Redirecting to HTTPS on https://localhost:${HTTPS_PORT}`);
 });

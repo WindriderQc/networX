@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Capture with p5.js</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- p5.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
+       
+    <script src="https://cdn.jsdelivr.net/gh/ml5js/Intro-ML-Arts-IMA@ml5-build-10-7-19/ml5_build/ml5.min.js"></script>
+    <!--<script src="ml5Face.js" ></script> -->
+
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+
+    <style>
+
+
+.graphCard { /* Your canvas element */
+    height: 100px; /* Match the container height */
+    width: 100%; /* Use full width of the container */
+    overflow: hidden; /* Hide overflow to ensure no extra space */
+}
+
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="text-center my-4">Emotion Detection and Analysis</h1>
+    <canvas id="emotionTimeline" width="600" height="400"></canvas>
+    <div class="row">
+        <div class="col-md-8">
+            <!-- p5.js Sketch -->
+            <div id="sketch-holder"></div>
+        </div>
+        <div class="col-md-4">
+            <!-- Charts Section -->
+            <h4>Emotion Graphs</h4>
+            <canvas id="emotionChartLastMinute" class="graphCard"></canvas>
+            <canvas id="emotionChartLast15Minutes" class="graphCard"></canvas>
+            <canvas id="emotionChartLast30Minutes" class="graphCard"></canvas>
+            <canvas id="emotionChartLastHour" class="graphCard"></canvas>
+            <canvas id="emotionChartLastDay" class="graphCard"></canvas>
+            <canvas id="emotionChartLastWeek" class="graphCard"></canvas>
+        </div>
+    </div>
+
+    <!-- Top Stats Section -->
+    <div class="my-4">
+        <!-- Last Minute Section -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <h3 class="text-center">Last Minute</h3>
+          </div>
+          <div class="col" id="neutralMinute"></div>
+          <div class="col" id="happyMinute"></div>
+          <div class="col" id="sadMinute"></div>
+          <div class="col" id="angryMinute"></div>
+          <div class="col" id="fearfulMinute"></div>
+          <div class="col" id="disgustedMinute"></div>
+          <div class="col" id="surprisedMinute"></div>
+        </div>
+      
+        <!-- Last 15 Minutes Section -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <h3 class="text-center">Last 15 Minutes</h3>
+          </div>
+          <div class="col" id="neutralLast15Minutes"></div>
+          <div class="col" id="happyLast15Minutes"></div>
+          <div class="col" id="sadLast15Minutes"></div>
+          <div class="col" id="angryLast15Minutes"></div>
+          <div class="col" id="fearfulLast15Minutes"></div>
+          <div class="col" id="disgustedLast15Minutes"></div>
+          <div class="col" id="surprisedLast15Minutes"></div>
+        </div>
+      
+        <!-- Last 30 Minutes Section -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <h3 class="text-center">Last 30 Minutes</h3>
+          </div>
+          <div class="col" id="neutralLast30Minutes"></div>
+          <div class="col" id="happyLast30Minutes"></div>
+          <div class="col" id="sadLast30Minutes"></div>
+          <div class="col" id="angryLast30Minutes"></div>
+          <div class="col" id="fearfulLast30Minutes"></div>
+          <div class="col" id="disgustedLast30Minutes"></div>
+          <div class="col" id="surprisedLast30Minutes"></div>
+        </div>
+      
+        <!-- Last Hour Section -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <h3 class="text-center">Last Hour</h3>
+          </div>
+          <div class="col" id="neutralHour"></div>
+          <div class="col" id="happyHour"></div>
+          <div class="col" id="sadHour"></div>
+          <div class="col" id="angryHour"></div>
+          <div class="col" id="fearfulHour"></div>
+          <div class="col" id="disgustedHour"></div>
+          <div class="col" id="surprisedHour"></div>
+        </div>
+      
+        <!-- Last Day Section -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <h3 class="text-center">Last Day</h3>
+          </div>
+          <div class="col" id="neutralDay"></div>
+          <div class="col" id="happyDay"></div>
+          <div class="col" id="sadDay"></div>
+          <div class="col" id="angryDay"></div>
+          <div class="col" id="fearfulDay"></div>
+          <div class="col" id="disgustedDay"></div>
+          <div class="col" id="surprisedDay"></div>
+        </div>
+      
+        <!-- Last Week Section -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <h3 class="text-center">Last Week</h3>
+          </div>
+          <div class="col" id="neutralWeek"></div>
+          <div class="col" id="happyWeek"></div>
+          <div class="col" id="sadWeek"></div>
+          <div class="col" id="angryWeek"></div>
+          <div class="col" id="fearfulWeek"></div>
+          <div class="col" id="disgustedWeek"></div>
+          <div class="col" id="surprisedWeek"></div>
+        </div>
+    </div>
+
+    <!-- p5.js Sketch Script -->
+    <script src="sketch.js"></script>
+</body>
+</html>
