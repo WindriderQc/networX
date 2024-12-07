@@ -8,7 +8,7 @@ const cors = require('cors');
 
 
 const app = express();
-const PORT = 3000;
+const PORT = 5000;
 const HTTPS_PORT = 3443;
 const RESULTS_FILE = 'results.csv';
 const SCAN_COMMAND = 'ipscan -f:range 192.168.1.1 192.168.1.254 -o results.csv -s -q';
