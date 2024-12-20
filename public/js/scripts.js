@@ -2,6 +2,11 @@
 
 function init() {
     console.log("Initialization started"); // Debugging
+    //launchScan()
+}
+
+async function launchScan() {
+
     fetch('/scan')
       .then(response => {
         console.log("Received response from /scan"); // Debugging
@@ -23,9 +28,8 @@ function init() {
           Failed to load network scan results.
         </div>`;
       });
+
 }
-
-
 
 
 function displaySummary(table) {

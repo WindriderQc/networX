@@ -9,7 +9,7 @@ const cors = require('cors');
 
 const app = express();
 const PORT = 5000;
-const HTTPS_PORT = 3443;
+const HTTPS_PORT = 5001;
 const RESULTS_FILE = 'results.csv';
 const SCAN_COMMAND = 'ipscan -f:range 192.168.1.1 192.168.1.254 -o results.csv -s -q';
 
@@ -33,7 +33,8 @@ https.createServer(sslOptions, app).listen(HTTPS_PORT, () => {
     console.log(`HTTPS server running on https://localhost:${HTTPS_PORT}`);
 });
 
-// Your existing routes and other Express.js logic...
+
+
 
 // Route for Home Page
 app.get('/', (req, res) => {
